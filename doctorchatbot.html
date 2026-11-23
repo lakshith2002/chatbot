@@ -1,0 +1,310 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Doctor Assistant</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f0f5fa;
+    color: #243247;
+}
+
+header {
+    background: #087e8b;
+    color: white;
+    padding: 22px;
+    text-align: center;
+}
+
+header h1 {
+    margin-bottom: 8px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 35px auto;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 14px;
+    box-shadow: 0 4px 15px #00000010;
+}
+
+h2 {
+    color: #087e8b;
+    margin-bottom: 15px;
+}
+
+textarea {
+    width: 100%;
+    height: 120px;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    resize: vertical;
+    font-size: 16px;
+}
+
+button {
+    background: #087e8b;
+    color: white;
+    border: none;
+    padding: 13px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+button:hover {
+    background: #065f68;
+}
+
+.result {
+    display: none;
+    line-height: 1.8;
+}
+
+.result-item {
+    background: #eaf7f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 12px 0;
+}
+
+.warning {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 8px;
+    color: #765500;
+    margin-top: 15px;
+}
+
+.danger {
+    background: #fde8e8;
+    color: #a00000;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🩺 AI Doctor Assistant</h1>
+    <p>Smart Health Information and Doctor Recommendation System</p>
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Patient Information</h2>
+
+        <label>Patient Name</label>
+        <input type="text" id="name"
+        placeholder="Enter your name"
+        style="width:100%;padding:12px;margin:10px 0;">
+
+        <label>Age</label>
+        <input type="number" id="age"
+        placeholder="Enter your age"
+        min="1" max="120"
+        style="width:100%;padding:12px;margin:10px 0;">
+    </div>
+
+    <div class="card">
+        <h2>Enter Your Symptoms</h2>
+
+        <p>Describe your symptoms below:</p>
+
+        <textarea id="symptoms"
+        placeholder="Example: fever, headache, cough, sore throat..."></textarea>
+
+        <button onclick="predictDisease()">
+            Analyze Symptoms
+        </button>
+    </div>
+
+    <div class="card result" id="result">
+        <h2>Health Analysis Results</h2>
+
+        <div id="patient"></div>
+
+        <div class="result-item">
+            <h3>Possible Conditions</h3>
+            <div id="disease"></div>
+        </div>
+
+        <div class="result-item">
+            <h3>Recommended Specialist</h3>
+            <div id="doctor"></div>
+        </div>
+
+        <div class="result-item">
+            <h3>Medicine Information</h3>
+            <div id="medicine"></div>
+        </div>
+
+        <div class="result-item">
+            <h3>Health Suggestions</h3>
+            <div id="advice"></div>
+        </div>
+
+        <div class="warning">
+            <strong>Medical Disclaimer:</strong>
+            This demo cannot diagnose diseases or prescribe medicines.
+            Consult a qualified doctor before taking medication.
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <p>AI Doctor Assistant | Educational Project</p>
+</footer>
+
+<script>
+
+// Educational symptom matching demo
+const conditions = [
+    {
+        name: "Common cold",
+        symptoms: ["sneezing", "runny nose", "sore throat"],
+        doctor: "General Practitioner or Family Doctor",
+        medicine: "A pharmacist can discuss suitable symptom-relief options.",
+        advice: "Rest, drink fluids and monitor your symptoms."
+    },
+    {
+        name: "Possible flu",
+        symptoms: ["fever", "body pain", "chills", "cough"],
+        doctor: "General Practitioner",
+        medicine: "A healthcare professional can assess whether an antiviral or other treatment is appropriate.",
+        advice: "Rest, drink fluids and seek medical advice if symptoms are severe."
+    },
+    {
+        name: "Possible migraine",
+        symptoms: ["headache", "nausea", "light sensitivity"],
+        doctor: "GP or Neurologist",
+        medicine: "A doctor or pharmacist can advise on appropriate headache treatment.",
+        advice: "Rest in a quiet, dark room and maintain hydration."
+    },
+    {
+        name: "Possible allergy",
+        symptoms: ["itching", "sneezing", "watery eyes"],
+        doctor: "GP or Allergist",
+        medicine: "Ask a pharmacist whether an antihistamine is suitable.",
+        advice: "Avoid known allergens and monitor symptoms."
+    },
+    {
+        name: "Possible stomach infection",
+        symptoms: ["diarrhea", "vomiting", "stomach pain"],
+        doctor: "General Practitioner",
+        medicine: "Oral rehydration solution may help replace lost fluids. Seek professional advice about other treatment.",
+        advice: "Drink fluids frequently and watch for dehydration."
+    }
+];
+
+function predictDisease() {
+
+    const name = document.getElementById("name").value.trim();
+    const age = Number(document.getElementById("age").value);
+    const input = document.getElementById("symptoms")
+        .value.toLowerCase().trim();
+
+    if (!name || !age || age < 1 || age > 120 || !input) {
+        alert("Please enter your name, valid age and symptoms.");
+        return;
+    }
+
+    const result = conditions.map(condition => {
+        const matches = condition.symptoms.filter(symptom =>
+            input.includes(symptom)
+        );
+
+        return {
+            ...condition,
+            matches: matches.length
+        };
+    }).filter(condition => condition.matches > 0)
+      .sort((a, b) => b.matches - a.matches);
+
+    document.getElementById("patient").innerHTML =
+        `<p><strong>Patient:</strong> ${escapeHTML(name)}</p>
+         <p><strong>Age:</strong> ${age}</p>`;
+
+    if (result.length > 0) {
+
+        const best = result[0];
+
+        document.getElementById("disease").innerHTML =
+            result.map(item =>
+                `<p>• ${escapeHTML(item.name)}</p>`
+            ).join("");
+
+        document.getElementById("doctor").textContent =
+            best.doctor;
+
+        document.getElementById("medicine").textContent =
+            best.medicine;
+
+        document.getElementById("advice").textContent =
+            best.advice;
+
+    } else {
+
+        document.getElementById("disease").textContent =
+            "No matching condition found. This does not rule out illness.";
+
+        document.getElementById("doctor").textContent =
+            "Consult a General Practitioner.";
+
+        document.getElementById("medicine").textContent =
+            "No medicine suggestion can safely be made from these symptoms.";
+
+        document.getElementById("advice").textContent =
+            "Seek professional medical advice and monitor your symptoms.";
+    }
+
+    document.getElementById("result").style.display = "block";
+    document.getElementById("result").scrollIntoView({
+        behavior: "smooth"
+    });
+}
+
+function escapeHTML(value) {
+    return value.replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[char]);
+}
+
+</script>
+
+</body>
+</html>
+ss
